@@ -1,4 +1,4 @@
-% example for checking for checking lyapunov function in a region 
+% % example for checking for checking lyapunov function in a region 
 
 close all
 clear all
@@ -23,47 +23,45 @@ state.dx = dyan_vp(state.x);
 
 
 % Lyapunov - p
-Lyap.degree = 6;
+Lyap.degree = 4;
 [Lyap.poly, Lyap.coeff] = polynomial(state.x,Lyap.degree); 
 Lyap.jaco_x = jacobian(Lyap.poly,state.x); 
 
-% Region 
-d = sdpvar(1,1);
-Reg.poly = sum(state.x.^2) - d; 
-
 % Lagrangian1
-Lagr1.degree = 4;
+Lagr1.degree = 2;
 [Lagr1.poly, Lagr1.coeff] = polynomial(state.x,Lagr1.degree);
 
 % Lagrangian2 for V_dot
-Lagr2.degree = 4;
+Lagr2.degree = 2;
 [Lagr2.poly, Lagr2.coeff] = polynomial(state.x,Lagr2.degree);
-
-
-% constraints 
-F  = [sos( Lyap.poly + Lagr1.poly*Reg.poly )
-     sos( Lagr1.poly)
-     sos(-Lyap.jaco_x*state.dx + Lagr2.poly*Reg.poly)
-     sos( Lagr2.poly)];
 
 % decision variables 
 % for finding lagrange polynomials 
 var = [ Lyap.coeff; Lagr1.coeff;Lagr2.coeff];
 
+r = 2; d = 0.01;
 d_min = 1e-6;
 d_max = 100;
 for i = 1:20
     d = (d_min+d_max)/2;
-    [sol,v,Q] = solvesos(F,[],[],var);
+    % Region 
+    Reg.f = state.x(1)^2 + state.x(2)^2 - d;
+    
+    % constraints 
+    F  = [sos( Lyap.poly + Lagr1.poly*Reg.f )
+         sos( Lagr1.poly)
+         sos(-Lyap.jaco_x*state.dx + Lagr2.poly*Reg.f)
+         sos( Lagr2.poly)];
+
+    [sol,v,Q] = solvesos(F,[],[],var); 
     flag = 1;
-    if (sol.problem ~=0) || (sum(abs(Q{1 }(:))) - abs(Q{1}(1)) < 1e-6)...
-            || (sum(abs(Q{3}(:))) < 1e-6)
+    if (sol.problem ~=0) || (sum(abs(Q{1}(:))) - abs(Q{1}(1)) < 1e-3)
         flag = 0;
     end
     
     if flag == 1
         disp(['Feasible for d = ', num2str(d)]);
-        d_min =d;
+        d_min =d; 
     else
         disp(['Infeasible for d = ',num2str(d)])
         d_max = d;
