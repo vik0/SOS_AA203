@@ -70,5 +70,5 @@ end
 if d_min < 1e-3
     disp(['Could not compute region of attraction']);
 else
-    disp(['Maximum circle  with r^2  in  ',num2str((d_min)),' to ', num2str(d_max)]);
+    disp(['Maximum feasible circle  with r^2  in  ',num2str((d_min)),' to ', num2str(d_max)]);
 end
