@@ -1,7 +1,7 @@
 % % example for checking for checking lyapunov function in a region 
 
 close all
-clear all
+clear 
 clc
 
 % state dynamics
@@ -11,7 +11,7 @@ dyan_simple = @(x)A*x;
 % Vanderpol dynamics (inverted in time)
 % dot(x) = -y
 % dot(y) = -(mu(1-x^2)y - x)
-mu = 0.01;
+mu = 1;
 dyan_vp = @(x) [- x(2);
     -mu*(1-x(1)^2)*x(2) + x(1)];
 
@@ -51,7 +51,9 @@ for i = 1:20
     F  = [sos( Lyap.poly + Lagr1.poly*Reg.f )
          sos( Lagr1.poly)
          sos(-Lyap.jaco_x*state.dx + Lagr2.poly*Reg.f)
-         sos( Lagr2.poly)];
+         sos( Lagr2.poly)
+         Lyap.coeff(1)==0
+         ];
 
     [sol,v,Q] = solvesos(F,[],[],var); 
     flag = 1;
@@ -71,4 +73,5 @@ if d_min < 1e-3
     disp(['Could not compute region of attraction']);
 else
     disp(['Maximum feasible circle  with r^2  in  ',num2str((d_min)),' to ', num2str(d_max)]);
+    disp(['radius is approximately',num2str(sqrt(d))])
 end
