@@ -11,14 +11,15 @@ x = sdpvar(2,1);
 dx = vander(x);
 
 % Lyap
-[V_p,V_c] = polynomial(x,2);
+[V_p,V_c] = polynomial(x,4);
 dV_p = jacobian(V_p,x);
 
 % Lagrangian 
-[l_p,l_c] = polynomial(x,2);
+[l_p,l_c] = polynomial(x,4);
 
 % for initialization 
-V_c0  = 0.5*[0; 0; 0; 1.5; -0.5 ; 1];
+V_c0 = zeros(15,1);
+V_c0(1:6)  = 0.5*[0; 0; 0; 1.5; -0.5 ; 1];
 V_p0  = replace(V_p, V_c,V_c0);
 dV_p0 = replace(dV_p,V_c,V_c0);
 r0 = 0.5;
@@ -82,8 +83,20 @@ for i = 1:length(x1(:))
     X(i,:) = [x1(i), y1(i)];
     dX(i,:) = vander(X(i,:));
 end
-V = V_c0(2)*X(:,1)+V_c0(3)*X(:,2)+V_c0(4)*X(:,1).^2+V_c0(5)*X(:,1).*X(:,2)+V_c0(6)*X(:,2).^2;
-dVdX = [V_c0(2) + 2*V_c0(4)*X(:,1) + V_c0(5)*X(:,2), V_c0(3) + V_c0(5)*X(:,1) + 2*V_c0(6)*X(:,2)]; 
+V = V_c0(2)*X(:,1)+V_c0(3)*X(:,2)+V_c0(4)*X(:,1).^2+V_c0(5)*X(:,1).*X(:,2)+V_c0(6)*X(:,2).^2 ... ;
+    +X(:,1).^3*V_c0(7)+X(:,1).^2 .*X(:,2)*V_c0(8)+X(:,1).*X(:,2).^2*V_c0(9)+X(:,2).^3*V_c0(10)+ ...
+    X(:,1).^4*V_c0(11)+X(:,1).^3 .*X(:,2)*V_c0(12)+X(:,1).^2 .*X(:,2).^2*V_c0(13)+ ...
+    X(:,1).*X(:,2).^3*V_c0(14)+X(:,2).^4*V_c0(15);
+
+dVdX(:,1) = V_c0(2) + 2*V_c0(4)*X(:,1) + V_c0(5)*X(:,2)  ...;
+       +3*X(:,1).^2*V_c0(7) + 2*X(:,1).*X(:,2)*V_c0(8) + X(:,2).^2*V_c0(9)+ ...
+       4*X(:,1).^3*V_c0(11) + 3*X(:,1).^2 .*X(:,2)*V_c0(12) + 2*X(:,1).*X(:,2).^2*V_c0(13)+ ...
+       X(:,2).^3*V_c0(14);
+dVdX(:,2) = V_c0(3) + V_c0(5)*X(:,1) + 2*V_c0(6)*X(:,2)  ...;
+       + X(:,1).^2 *V_c0(8)+ 2* X(:,1).*X(:,2)*V_c0(9)+3*X(:,2).^2*V_c0(10)+ ...
+       X(:,1).^3 *V_c0(12)+2*X(:,1).^2 .*X(:,2)*V_c0(13)+ ...
+       3*X(:,1).*X(:,2).^2*V_c0(14)+4*X(:,2).^3*V_c0(15);
+
 dV = sum(dVdX.*dX,2);
 
 Map = x1*0+1; Map(V<=0)=0;Map(dV>=0) = 0;
@@ -91,16 +104,22 @@ Map = x1*0+1; Map(V<=0)=0;Map(dV>=0) = 0;
 V = reshape(V,size(x1));
 dV = reshape(dV,size(x1));
 
+dyan_tp = @(t, x) [ x(2);
+mu*(1-x(1)^2)*x(2) - x(1)];
+[t, a] = ode45(dyan_tp, [1, 20], [0, 1]);
 figure;
 surf(x1,y1,V);
-title('Lyapunov');
-axis([-5 5 -5 5 0 10])
+% title('Lyapunov');
+axis([-5 5 -5 5 0 r0]); hold on;
+plot(a(:,1),a(:,2),'r','LineWidth',2);
+view(0,90);
 
-figure;
-surf(x1,y1,dV);
-title('Grad Lyapunov');
-axis([-5 5 -5 5 -10 0])
- 
-figure;
-surf(x1,y1,Map);
-title('Region with V>0 and dV<0');
+% 
+% figure;
+% surf(x1,y1,dV);
+% title('Grad Lyapunov');
+% axis([-5 5 -5 5 -10 0])
+%  
+% figure;;
+% surf(x1,y1,Map);
+% title('Region with V>0 and dV<0');
